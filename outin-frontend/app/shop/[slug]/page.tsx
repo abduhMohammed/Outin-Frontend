@@ -6,7 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { getProductById } from '@/services/apiService';
 import { ProductDetails } from '@/types/api';
-import { useCart } from '@/store/useCartStore';
+import { useCart } from '@/lib/useCartStore';
 
 export default function ProductDetailPage({ params }: { params: Promise<{ slug: string }> }) {
 const resolvedParams = use(params);

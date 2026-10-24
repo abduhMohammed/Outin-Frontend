@@ -1,4 +1,4 @@
-// 1. Category Interface
+// 1. Category
 export interface Category {
 id: string;
 name: string;
@@ -7,7 +7,7 @@ description: string;
 isActive: boolean;
 }
 
-// 2. Faculty Drop Interface
+// 2. Faculty Drop
 export interface FacultyDrop {
 id: string;
 name: string;
@@ -18,7 +18,7 @@ displayOrder: number;
 isActive: boolean;
 }
 
-//4. Product Interface
+// 3. Product (list item)
 export interface Product {
 id: string;
 name: string;
@@ -28,35 +28,38 @@ maxPrice: number;
 thumbnailUrl: string;
 categoryName?: string;
 facultyDropIds?: string[];
-status?: number;
+facultyDropSlugs?: string[];
+totalStock?: number;
+status?: string; // "Draft" | "Active" | "OutOfStock" | "Archived"
 }
 
-//5. Color Interface
+// 4. Color
 export interface Color {
 id: string;
 name: string;
 hexCode?: string;
 }
 
-//6. Size Interface
+// 5. Size
 export interface Size {
 id: string;
 name: string;
 }
 
-//7. ProductVariant Interface
+// 6. Product variant
 export interface ProductVariant {
 id: string;
 sku: string;
 colorId: string;
 colorName: string;
+colorHexCode?: string;
 sizeId: string;
 sizeName: string;
 price: number;
 stockQuantity: number;
 }
 
-//8. ProductDetails Interface
+// 7. Product details
 export interface ProductDetails {
 id: string;
 name: string;
@@ -69,7 +72,7 @@ variants: ProductVariant[];
 imageUrls: string[];
 }
 
-//9. Order Interface
+// 8. Cart item (stored in the browser)
 export interface CartItem {
 variantId: string;
 productId: string;
@@ -81,4 +84,12 @@ sizeName: string;
 price: number;
 quantity: number;
 maxStock: number;
+}
+
+// 9. Result of POST /orders
+export interface CreateOrderResult {
+orderId: string;
+orderNumber: string;
+total: number;
+whatsAppUrl: string;
 }

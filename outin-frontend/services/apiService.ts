@@ -20,6 +20,18 @@ if (Array.isArray(json?.data)) return json.data;
 return [];
 };
 
+// التعديل هنا: جلب authToken (اللي متخزن في المتصفح عندك) بجانب token احتياطياً
+const getAuthHeaders = () => {
+const token = typeof window !== 'undefined' 
+    ? localStorage.getItem('authToken') || localStorage.getItem('token') 
+    : null;
+    
+return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+};
+};
+
 const requestCache = new Map<string, Promise<any>>();
 
 async function fetchWithDeduplication<T>(endpoint: string): Promise<T> {
@@ -113,4 +125,73 @@ return dropArray.map((prod) => ({
     ...prod,
     thumbnailUrl: getValidImageUrl(prod.thumbnailUrl, "/images/product/Basic.jpg"),
 }));
+}
+
+export class AuthError extends Error {
+constructor(message: string) {
+    super(message);
+    this.name = 'AuthError';
+}
+}
+
+export async function getAdminOrders(params?: { status?: string; search?: string; page?: number; pageSize?: number }) {
+try {
+    const query = new URLSearchParams();
+    if (params?.status) query.append('status', params.status);
+    if (params?.search) query.append('search', params.search);
+    if (params?.page) query.append('page', params.page.toString());
+    if (params?.pageSize) query.append('pageSize', params.pageSize.toString());
+
+    const url = `${API_BASE_URL}/admin/orders${query.toString() ? `?${query.toString()}` : ''}`;
+    const res = await fetch(url, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+    cache: 'no-store',
+    });
+
+    if (res.status === 401) throw new AuthError('Unauthorized');
+    if (!res.ok) return { items: [], totalCount: 0, totalPages: 1 };
+    return await res.json();
+} catch (err) {
+    if (err instanceof AuthError) throw err;
+    console.error('Error fetching admin orders:', err);
+    return { items: [], totalCount: 0, totalPages: 1 };
+}
+}
+
+export async function getAdminOrderById(id: string) {
+try {
+    const res = await fetch(`${API_BASE_URL}/admin/orders/${id}`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+    cache: 'no-store',
+    });
+    if (res.status === 401) throw new AuthError('Unauthorized');
+    if (!res.ok) return null;
+    return await res.json();
+} catch (err) {
+    if (err instanceof AuthError) throw err;
+    console.error('Error fetching order details:', err);
+    return null;
+}
+}
+
+export async function updateOrderStatus(orderId: string, status: string | number) {
+try {
+    const res = await fetch(`${API_BASE_URL}/admin/orders/${orderId}/status`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ status }),
+    });
+    if (res.status === 401) throw new AuthError('Unauthorized');
+    if (!res.ok) {
+    const errText = await res.text();
+    return errText || 'Failed to update order status';
+    }
+    return null;
+} catch (err) {
+    if (err instanceof AuthError) throw err;
+    console.error('Error updating order status:', err);
+    return 'Network error while updating status.';
+}
 }
