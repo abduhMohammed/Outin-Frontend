@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, useRef, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -23,6 +23,14 @@ const [isLoading, setIsLoading] = useState<boolean>(true);
 const [toastMessage, setToastMessage] = useState<string | null>(null);
 const [openAccordion, setOpenAccordion] = useState<string | null>(null);
 
+const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+useEffect(() => {
+    return () => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    };
+}, []);
+
 useEffect(() => {
     async function fetchProduct() {
     if (!slug) return;
@@ -35,8 +43,10 @@ useEffect(() => {
         setSelectedImage(data.imageUrls[0]);
         }
         if (data.variants && data.variants.length > 0) {
-        setSelectedColor(data.variants[0].colorName);
-        setSelectedSize(data.variants[0].sizeName);
+        const firstAvailable =
+            data.variants.find((v) => v.stockQuantity > 0) ?? data.variants[0];
+        setSelectedColor(firstAvailable.colorName);
+        setSelectedSize(firstAvailable.sizeName);
         }
     }
     setIsLoading(false);
@@ -81,10 +91,11 @@ const currentStock = activeVariant?.stockQuantity ?? 0;
 const isOutOfStock = currentStock <= 0 || product.productStatus === 'OutOfStock';
 
 const showToast = (msg: string) => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
     setToastMessage(msg);
-    setTimeout(() => {
+    toastTimer.current = setTimeout(() => {
     setToastMessage(null);
-    }, 3000);
+    }, 4000);
 };
 
 const handleAddToCart = (redirectCheckout = false) => {
@@ -106,18 +117,36 @@ const handleAddToCart = (redirectCheckout = false) => {
     if (redirectCheckout) {
     router.push('/checkout');
     } else {
-    showToast(`Added ${quantity} x ${product.name} (${selectedColor} / ${selectedSize}) to cart!`);
+    showToast(`${quantity} x ${product.name} (${selectedColor} / ${selectedSize})`);
     }
 };
 
 return (
     <div className="min-h-screen bg-[#F9F9F9] text-black font-sans pb-20 relative">
     {toastMessage && (
-        <div className="fixed top-5 right-5 z-50 bg-black text-white text-xs font-bold px-5 py-3 rounded shadow-xl flex items-center gap-2 border border-neutral-700 animate-bounce">
-        <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div
+        role="status"
+        aria-live="polite"
+        className="fixed top-24 left-4 right-4 sm:left-auto sm:right-6 sm:w-96 z-50 bg-black text-white px-4 py-3 rounded shadow-xl border border-neutral-700 flex items-start gap-3"
+        >
+        <svg
+            className="w-4 h-4 mt-0.5 flex-shrink-0 text-green-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+        >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
         </svg>
-        <span>{toastMessage}</span>
+        <div className="flex-1 min-w-0">
+            <p className="text-xs font-black uppercase tracking-wider">Added to cart</p>
+            <p className="text-[11px] font-semibold text-neutral-300 mt-0.5 truncate">{toastMessage}</p>
+        </div>
+        <Link
+            href="/cart"
+            className="text-[11px] font-black uppercase tracking-wider text-orange-500 hover:text-orange-400 whitespace-nowrap"
+        >
+            View Cart
+        </Link>
         </div>
     )}
 

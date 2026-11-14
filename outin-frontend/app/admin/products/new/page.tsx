@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import AdminLayout from '@/components/admin/AdminLayout';
 import { authHeaders, clearToken } from '@/lib/auth';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'https://localhost:7114/api/v1';
@@ -61,7 +62,6 @@ const toList = (data: any) => {
     return data?.data || data?.items || [];
 };
 
-// returns true if the response was an auth error (and was handled)
 const handleAuthError = (res: Response) => {
     if (res.status === 401) {
     clearToken();
@@ -78,7 +78,7 @@ const handleAuthError = (res: Response) => {
 useEffect(() => {
     const safeFetch = async (endpoint: string, setter: (data: any[]) => void) => {
     try {
-        const res = await fetch(`${API}/${endpoint}`); // public endpoints, no token
+        const res = await fetch(`${API}/${endpoint}`);
         if (!res.ok) {
         console.warn(`Fetch ${endpoint} returned status: ${res.status}`);
         setter([]);
@@ -117,7 +117,7 @@ const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     try {
     const res = await fetch(`${API}/products/images?folder=products`, {
         method: 'POST',
-        headers: authHeaders(), // no Content-Type, the browser sets it
+        headers: authHeaders(),
         body: formData,
     });
 
@@ -129,7 +129,7 @@ const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         return;
     }
 
-    const data = await res.json(); // { urls: [...] }
+    const data = await res.json();
     setImageUrls((prev) => [...prev, ...data.urls]);
     } catch (err) {
     console.error('Error uploading image:', err);
@@ -246,22 +246,8 @@ const handleSubmit = async (e: React.FormEvent) => {
 };
 
 return (
-    <div className="min-h-screen bg-[#F9F9F9] text-black flex font-sans">
-    <aside className="w-64 bg-white border-r border-neutral-200 hidden md:flex flex-col justify-between p-6">
-        <div className="space-y-8">
-        <Link href="/" className="text-xl font-black tracking-tighter block">
-            OUT<span className="text-orange-600">IN</span>
-        </Link>
-        <nav className="space-y-1 text-xs font-bold uppercase tracking-wider text-neutral-500">
-            <Link href="/admin" className="block px-3 py-2.5 rounded hover:bg-neutral-100 transition-colors">Dashboard</Link>
-            <Link href="/admin/products" className="block px-3 py-2.5 rounded bg-orange-50 text-orange-600">Products</Link>
-            <Link href="/admin/orders" className="block px-3 py-2.5 rounded hover:bg-neutral-100 transition-colors">Orders</Link>
-            <Link href="/admin/categories" className="block px-3 py-2.5 rounded hover:bg-neutral-100 transition-colors">Categories</Link>
-        </nav>
-        </div>
-    </aside>
-
-    <main className="flex-1 p-8 overflow-y-auto">
+    <AdminLayout>
+    <div className="p-8 overflow-y-auto">
         <div className="mb-6">
         <Link href="/admin/products" className="text-xs font-bold text-neutral-400 hover:text-black uppercase tracking-wider mb-2 inline-block transition-colors">
             ← Back to Products
@@ -280,7 +266,7 @@ return (
         <div className="lg:col-span-2 space-y-6 bg-white border border-neutral-200 p-6 rounded shadow-sm">
             <div>
             <label className="text-xs font-bold uppercase tracking-wider block mb-1">
-                Product Name <span className="text-orange-600">*</span>
+                Product Name <span className="text-[#FF4500]">*</span>
             </label>
             <input
                 type="text"
@@ -294,7 +280,7 @@ return (
 
             <div>
             <label className="text-xs font-bold uppercase tracking-wider block mb-1">
-                Category <span className="text-orange-600">*</span>
+                Category <span className="text-[#FF4500]">*</span>
             </label>
             <select
                 required
@@ -331,7 +317,7 @@ return (
 
             <div>
             <label className="text-xs font-bold uppercase tracking-wider block mb-1">
-                Status <span className="text-orange-600">*</span>
+                Status <span className="text-[#FF4500]">*</span>
             </label>
             <select
                 value={status}
@@ -346,7 +332,7 @@ return (
 
             <div>
             <label className="text-xs font-bold uppercase tracking-wider block mb-1">
-                Base Price (EGP) <span className="text-orange-600">*</span>
+                Base Price (EGP) <span className="text-[#FF4500]">*</span>
             </label>
             <input
                 type="number"
@@ -418,7 +404,7 @@ return (
 
             <div className="bg-white border border-neutral-200 p-6 rounded shadow-sm space-y-3">
             <label className="text-xs font-bold uppercase tracking-wider block">
-                Colors <span className="text-orange-600">*</span>
+                Colors <span className="text-[#FF4500]">*</span>
             </label>
             <div className="flex flex-wrap gap-2">
                 {availableColors.length > 0 ? (
@@ -447,7 +433,7 @@ return (
 
             <div className="bg-white border border-neutral-200 p-6 rounded shadow-sm space-y-3">
             <label className="text-xs font-bold uppercase tracking-wider block">
-                Sizes <span className="text-orange-600">*</span>
+                Sizes <span className="text-[#FF4500]">*</span>
             </label>
             <div className="flex flex-wrap gap-2">
                 {availableSizes.length > 0 ? (
@@ -541,7 +527,7 @@ return (
             </button>
         </div>
         </form>
-    </main>
     </div>
+    </AdminLayout>
 );
 }

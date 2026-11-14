@@ -26,7 +26,7 @@ const slides = [
     primaryBtnHref: '/shop',
     secondaryBtnText: 'VIEW LATEST DROP',
     secondaryBtnHref: '#latest-drop',
-    image: '/hero-slide-1.jpg',
+    image: '/hero-slide-01.jpg',
   },
   {
     id: 2,

@@ -12,6 +12,11 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
+        hostname: "your-backend-domain.runasp.net", 
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
         hostname: "placehold.co",
       },
     ],

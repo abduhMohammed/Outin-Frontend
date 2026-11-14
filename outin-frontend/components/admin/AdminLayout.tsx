@@ -6,7 +6,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import { getToken, clearToken } from '@/lib/auth';
 
 const navLinks = [
-{ label: 'Dashboard', href: '/admin' },
 { label: 'Products', href: '/admin/products' },
 { label: 'Orders', href: '/admin/orders' },
 { label: 'Catalog', href: '/admin/catalog' },
@@ -20,8 +19,20 @@ const router = useRouter();
 
 // UI-only guard: the real protection is [Authorize(Roles = Admin)] on the API
 useEffect(() => {
-    if (!getToken()) router.replace('/login');
-    else setAuthorized(true);
+    try {
+    const token = getToken();
+    const profile = JSON.parse(localStorage.getItem('userProfile') ?? '{}');
+    const isAdmin = Array.isArray(profile.roles) && profile.roles.includes('Admin');
+
+    if (!token || !isAdmin) {
+        router.replace('/login');
+        return;
+    }
+
+    setAuthorized(true);
+    } catch {
+    router.replace('/login');
+    }
 }, [router]);
 
 // Close the mobile menu when the page route changes
@@ -39,6 +50,7 @@ useEffect(() => {
 
 const handleLogout = () => {
     clearToken();
+    localStorage.removeItem('userProfile');
     router.replace('/login');
 };
 
