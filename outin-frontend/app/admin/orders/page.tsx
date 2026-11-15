@@ -45,6 +45,9 @@ const [message, setMessage] = useState<{ type: 'ok' | 'error'; text: string } | 
 const [details, setDetails] = useState<any | null>(null);
 const [detailsLoading, setDetailsLoading] = useState(false);
 
+// State للتحكم في مودال تأكيد الإلغاء الشيك
+const [cancelModal, setCancelModal] = useState<{ orderId: string } | null>(null);
+
 const handleError = useCallback(
     (err: unknown, fallback: string) => {
     if (err instanceof AuthError) {
@@ -90,8 +93,7 @@ useEffect(() => {
     fetchOrders();
 }, [fetchOrders]);
 
-const handleStatusChange = async (orderId: string, newStatus: string) => {
-    if (newStatus === 'Cancelled' && !confirm('Cancel this order? Stock will be returned.')) return;
+const executeStatusChange = async (orderId: string, newStatus: string) => {
     setUpdatingId(orderId);
     setMessage(null);
     try {
@@ -106,7 +108,17 @@ const handleStatusChange = async (orderId: string, newStatus: string) => {
     handleError(err, 'Could not update the order.');
     } finally {
     setUpdatingId(null);
+    setCancelModal(null);
     }
+};
+
+const handleStatusChange = (orderId: string, newStatus: string) => {
+    if (newStatus === 'Cancelled') {
+    // فتح المودال المخصص بدل الـ confirm القديم
+    setCancelModal({ orderId });
+    return;
+    }
+    executeStatusChange(orderId, newStatus);
 };
 
 const openDetails = async (id: string) => {
@@ -286,6 +298,34 @@ return (
         </div>
     )}
 
+    {/* Cancel Confirmation Modal (شكل مودرن ماشي مع الـ design) */}
+    {cancelModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div className="bg-white max-w-sm w-full p-6 rounded space-y-4 shadow-xl border border-neutral-200 text-black">
+            <h3 className="text-sm font-black uppercase tracking-wider text-red-600">Cancel Order</h3>
+            <p className="text-xs font-semibold text-neutral-600">
+            Are you sure you want to cancel this order? Stock will be returned automatically.
+            </p>
+            <div className="flex justify-end gap-2 pt-2">
+            <button
+                onClick={() => setCancelModal(null)}
+                className="px-4 py-2 border border-neutral-200 text-xs font-bold rounded hover:bg-neutral-50 cursor-pointer"
+            >
+                Keep Order
+            </button>
+            <button
+                onClick={() => executeStatusChange(cancelModal.orderId, 'Cancelled')}
+                disabled={updatingId === cancelModal.orderId}
+                className="px-4 py-2 bg-red-600 text-white text-xs font-black uppercase rounded hover:bg-red-700 cursor-pointer disabled:opacity-50"
+            >
+                {updatingId === cancelModal.orderId ? 'Cancelling...' : 'Yes, Cancel'}
+            </button>
+            </div>
+        </div>
+        </div>
+    )}
+
+    {/* Details Modal */}
     {details && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
         <div className="bg-white max-w-lg w-full p-6 sm:p-8 rounded space-y-5 shadow-xl border border-neutral-200 max-h-[90vh] overflow-y-auto text-black">
