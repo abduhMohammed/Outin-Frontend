@@ -1,20 +1,29 @@
 import type { NextConfig } from "next";
 
+const isDev = process.env.NODE_ENV === "development";
+
 const nextConfig: NextConfig = {
   images: {
-    dangerouslyAllowLocalIP: true, 
+    // Only for local development against https://localhost:7114
+    dangerouslyAllowLocalIP: isDev,
     remotePatterns: [
+      // Production API
       {
         protocol: "https",
-        hostname: "localhost",
-        port: "7114",
-        pathname: "/**",
+        hostname: "outin.runasp.net",
+        pathname: "/Uploads/**",
       },
-      {
-        protocol: "https",
-        hostname: "your-backend-domain.runasp.net", 
-        pathname: "/**",
-      },
+      // Local API (development only)
+      ...(isDev
+        ? [
+            {
+              protocol: "https" as const,
+              hostname: "localhost",
+              port: "7114",
+              pathname: "/Uploads/**",
+            },
+          ]
+        : []),
       {
         protocol: "https",
         hostname: "placehold.co",
