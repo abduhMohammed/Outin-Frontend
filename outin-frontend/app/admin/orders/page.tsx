@@ -45,7 +45,6 @@ const [message, setMessage] = useState<{ type: 'ok' | 'error'; text: string } | 
 const [details, setDetails] = useState<any | null>(null);
 const [detailsLoading, setDetailsLoading] = useState(false);
 
-// State للتحكم في مودال تأكيد الإلغاء الشيك
 const [cancelModal, setCancelModal] = useState<{ orderId: string } | null>(null);
 
 const handleError = useCallback(
@@ -114,7 +113,6 @@ const executeStatusChange = async (orderId: string, newStatus: string) => {
 
 const handleStatusChange = (orderId: string, newStatus: string) => {
     if (newStatus === 'Cancelled') {
-    // فتح المودال المخصص بدل الـ confirm القديم
     setCancelModal({ orderId });
     return;
     }
@@ -298,7 +296,6 @@ return (
         </div>
     )}
 
-    {/* Cancel Confirmation Modal (شكل مودرن ماشي مع الـ design) */}
     {cancelModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
         <div className="bg-white max-w-sm w-full p-6 rounded space-y-4 shadow-xl border border-neutral-200 text-black">
@@ -325,7 +322,6 @@ return (
         </div>
     )}
 
-    {/* Details Modal */}
     {details && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
         <div className="bg-white max-w-lg w-full p-6 sm:p-8 rounded space-y-5 shadow-xl border border-neutral-200 max-h-[90vh] overflow-y-auto text-black">
