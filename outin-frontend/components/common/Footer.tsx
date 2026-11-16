@@ -52,58 +52,9 @@ return (
             <li>
             <Link
                 className="hover:text-white transition-colors"
-                href="/shop?cat=sweatshirts"
+                href="/shop?cat=sweatpants"
             >
-                Sweatshirts
-            </Link>
-            </li>
-            <li>
-            <Link
-                className="hover:text-white transition-colors"
-                href="/shop?cat=accessories"
-            >
-                Accessories
-            </Link>
-            </li>
-        </ul>
-        </div>
-
-        {/* FACULTY DROPS LINKS */}
-        <div className="space-y-3">
-        <h4 className="text-xs font-black uppercase tracking-wider">
-            FACULTY DROPS
-        </h4>
-        <ul className="space-y-2 text-xs text-gray-400">
-            <li>
-            <Link
-                className="hover:text-white transition-colors"
-                href="/shop?faculty=engineering"
-            >
-                Engineering
-            </Link>
-            </li>
-            <li>
-            <Link
-                className="hover:text-white transition-colors"
-                href="/shop?faculty=medicine"
-            >
-                Medicine
-            </Link>
-            </li>
-            <li>
-            <Link
-                className="hover:text-white transition-colors"
-                href="/shop?faculty=pharmacy"
-            >
-                Pharmacy
-            </Link>
-            </li>
-            <li>
-            <Link
-                className="hover:text-white transition-colors"
-                href="/shop?faculty=business"
-            >
-                Business
+                Sweatpants
             </Link>
             </li>
         </ul>
@@ -116,36 +67,14 @@ return (
         </h4>
         <ul className="space-y-2 text-xs text-gray-400">
             <li>
-            <Link
+            <a
                 className="hover:text-white transition-colors"
-                href="/faq"
+                href="https://wa.me/201552959939"
+                rel="noreferrer"
+                target="_blank"
             >
-                FAQ
-            </Link>
-            </li>
-            <li>
-            <Link
-                className="hover:text-white transition-colors"
-                href="/shipping"
-            >
-                Shipping
-            </Link>
-            </li>
-            <li>
-            <Link
-                className="hover:text-white transition-colors"
-                href="/returns"
-            >
-                Returns
-            </Link>
-            </li>
-            <li>
-            <Link
-                className="hover:text-white transition-colors"
-                href="/contact"
-            >
-                Contact
-            </Link>
+                Contact Us (WhatsApp)
+            </a>
             </li>
         </ul>
         </div>
@@ -160,7 +89,7 @@ return (
             <a
             aria-label="Instagram"
             className="hover:text-orange-600 transition-colors"
-            href="https://instagram.com"
+            href="https://www.instagram.com/outin.eg1/"
             rel="noreferrer"
             target="_blank"
             >
@@ -173,12 +102,38 @@ return (
             <a
             aria-label="TikTok"
             className="hover:text-orange-600 transition-colors"
-            href="https://tiktok.com"
+            href="https://www.tiktok.com/@outin_eg1?lang=en"
             rel="noreferrer"
             target="_blank"
             >
             <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
                 <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.82.57-1.31 1.56-1.28 2.56.02.91.48 1.8 1.25 2.29.98.63 2.27.56 3.17-.18.78-.62 1.22-1.62 1.22-2.62.01-4.98.01-9.96.01-14.94z" />
+            </svg>
+            </a>
+
+            {/* FACEBOOK ICON */}
+            <a
+            aria-label="Facebook"
+            className="hover:text-orange-600 transition-colors"
+            href="https://www.facebook.com/profile.php?id=61592130853683"
+            rel="noreferrer"
+            target="_blank"
+            >
+            <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                <path d="M22.675 0h-21.35c-.732 0-1.325.593-1.325 1.325v21.351c0 .731.593 1.324 1.325 1.324h11.495v-9.294h-3.128v-3.622h3.128v-2.671c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12v9.293h6.116c.73 0 1.323-.593 1.323-1.325v-21.35c0-.732-.593-1.325-1.325-1.325z" />
+            </svg>
+            </a>
+
+            {/* YOUTUBE ICON */}
+            <a
+            aria-label="YouTube"
+            className="hover:text-orange-600 transition-colors"
+            href="https://www.youtube.com/channel/UCd7TfAM4ElldwNd60L8TRIQ"
+            rel="noreferrer"
+            target="_blank"
+            >
+            <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
             </svg>
             </a>
         </div>
