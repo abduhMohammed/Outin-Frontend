@@ -44,6 +44,10 @@ const [error, setError] = useState('');
 const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
 const [refreshKey, setRefreshKey] = useState(0);
 
+// Delete Modal State
+const [productToDelete, setProductToDelete] = useState<{ id: string; name: string } | null>(null);
+const [isDeleting, setIsDeleting] = useState(false);
+
 // categories for the filter (public endpoint)
 useEffect(() => {
     fetch(`${API}/categories`)
@@ -75,7 +79,6 @@ useEffect(() => {
     setIsLoading(true);
     setError('');
 
-    // token is sent so the API knows this is an admin (shows Draft / Archived too)
     fetch(`${API}/products?${params.toString()}`, {
     headers: authHeaders(),
     signal: controller.signal,
@@ -102,12 +105,13 @@ useEffect(() => {
     return () => controller.abort();
 }, [debouncedSearch, categorySlug, status, page, refreshKey]);
 
-const handleDelete = async (productId: string) => {
-    if (!confirm('Are you sure you want to delete this product?')) return;
+const confirmDelete = async () => {
+    if (!productToDelete) return;
+    setIsDeleting(true);
     setError('');
 
     try {
-    const res = await fetch(`${API}/products/${productId}`, {
+    const res = await fetch(`${API}/products/${productToDelete.id}`, {
         method: 'DELETE',
         headers: authHeaders(),
     });
@@ -119,20 +123,26 @@ const handleDelete = async (productId: string) => {
     }
     if (res.status === 403) {
         setError('You do not have permission to delete products.');
+        setIsDeleting(false);
+        setProductToDelete(null);
         return;
     }
     if (!res.ok) {
         const err = await res.json().catch(() => null);
         setError(err?.errors?.join('\n') ?? 'Failed to delete product.');
+        setIsDeleting(false);
+        setProductToDelete(null);
         return;
     }
 
-    // reload the current page (go back a page if this was the last item on it)
     if (products.length === 1 && page > 1) setPage(page - 1);
     else setRefreshKey((k) => k + 1);
     } catch (err) {
     console.error('Error deleting product:', err);
     setError('Server connection error.');
+    } finally {
+    setIsDeleting(false);
+    setProductToDelete(null);
     }
 };
 
@@ -285,7 +295,7 @@ return (
                         <button
                             onClick={() => {
                             setActiveDropdown(null);
-                            handleDelete(productId);
+                            setProductToDelete({ id: productId, name: product.name });
                             }}
                             className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 font-bold cursor-pointer"
                         >
@@ -322,6 +332,38 @@ return (
             >
             Next
             </button>
+        </div>
+        </div>
+    )}
+
+    {/* CUSTOM DELETE CONFIRMATION MODAL */}
+    {productToDelete && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-2xl border border-neutral-200 animate-in fade-in zoom-in duration-200">
+            <h3 className="text-base font-black uppercase tracking-tight text-black mb-2">
+            Delete Product
+            </h3>
+            <p className="text-xs text-neutral-600 mb-6 leading-relaxed">
+            Are you sure you want to delete <span className="font-bold text-black">&quot;{productToDelete.name}&quot;</span>? This action cannot be undone.
+            </p>
+            <div className="flex items-center justify-end gap-3">
+            <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => setProductToDelete(null)}
+                className="px-4 py-2 border border-neutral-300 rounded text-xs font-bold uppercase tracking-wider hover:bg-neutral-100 transition-colors cursor-pointer"
+            >
+                Cancel
+            </button>
+            <button
+                type="button"
+                disabled={isDeleting}
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-black uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50"
+            >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+            </button>
+            </div>
         </div>
         </div>
     )}

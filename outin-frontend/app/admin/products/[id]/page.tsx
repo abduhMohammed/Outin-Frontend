@@ -44,7 +44,6 @@ const [formData, setFormData] = useState({
     description: '',
     status: 2,
     categoryId: '',
-    facultyDropIds: [] as string[],
 });
 const [isOutOfStock, setIsOutOfStock] = useState(false);
 
@@ -53,7 +52,6 @@ const [variantEdits, setVariantEdits] = useState<Record<string, VariantEdit>>({}
 const [images, setImages] = useState<any[]>([]);
 
 const [categories, setCategories] = useState<any[]>([]);
-const [facultyDrops, setFacultyDrops] = useState<any[]>([]);
 const [colors, setColors] = useState<any[]>([]);
 const [sizes, setSizes] = useState<any[]>([]);
 
@@ -116,14 +114,12 @@ useEffect(() => {
     async function load() {
     try {
         // public lookups: no token needed
-        const [cats, drops, cols, szs] = await Promise.all([
+        const [cats, cols, szs] = await Promise.all([
         fetch(`${API}/categories`),
-        fetch(`${API}/faculty-drops`),
         fetch(`${API}/colors`),
         fetch(`${API}/sizes`),
         ]);
         if (cats.ok) setCategories(toList(await cats.json()));
-        if (drops.ok) setFacultyDrops(toList(await drops.json()));
         if (cols.ok) setColors(toList(await cols.json()));
         if (szs.ok) setSizes(toList(await szs.json()));
 
@@ -131,7 +127,10 @@ useEffect(() => {
         if (!prodRes.ok) {
         setMessage({
             type: 'error',
-            text: prodRes.status === 404 ? 'Product not found.' : await readError(prodRes, 'Failed to load product.'),
+            text:
+            prodRes.status === 404
+                ? 'Product not found.'
+                : await readError(prodRes, 'Failed to load product.'),
         });
         return;
         }
@@ -142,7 +141,6 @@ useEffect(() => {
         description: p.description ?? '',
         status: STATUS_TO_NUMBER[p.productStatus] ?? 2,
         categoryId: p.categoryId ?? '',
-        facultyDropIds: p.facultyDropIds ?? [],
         });
 
         await Promise.all([loadVariants(), loadImages()]);
@@ -154,14 +152,6 @@ useEffect(() => {
     }
     load();
 }, [productId, call, loadVariants, loadImages]);
-
-const toggleFacultyDrop = (id: string) =>
-    setFormData((f) => ({
-    ...f,
-    facultyDropIds: f.facultyDropIds.includes(id)
-        ? f.facultyDropIds.filter((x) => x !== id)
-        : [...f.facultyDropIds, id],
-    }));
 
 // ---------- product ----------
 const handleUpdateProduct = async (e: React.FormEvent) => {
@@ -177,7 +167,7 @@ const handleUpdateProduct = async (e: React.FormEvent) => {
         description: formData.description || null,
         status: Number(formData.status),
         categoryId: formData.categoryId,
-        facultyDropIds: formData.facultyDropIds, // required: the API replaces the whole list
+        facultyDropIds: [], // legacy field, still required by the API until the backend cleanup
         }),
     });
 
@@ -198,7 +188,9 @@ const generateSku = (colorId: string, sizeId: string) => {
     const color = colors.find((c) => c.id === colorId)?.name || 'COL';
     const size = sizes.find((s) => s.id === sizeId)?.name || 'SZ';
     const rand = Math.random().toString(36).substring(2, 7).toUpperCase();
-    const prefix = formData.name ? formData.name.replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase() : 'PRD';
+    const prefix = formData.name
+    ? formData.name.replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase()
+    : 'PRD';
     return `${prefix}-${color.substring(0, 3).toUpperCase()}-${size.toUpperCase()}-${rand}`;
 };
 
@@ -353,7 +345,10 @@ return (
             Update product details, images, and variants
         </p>
         </div>
-        <Link href="/admin/products" className="text-xs font-bold text-neutral-600 hover:text-black transition-colors">
+        <Link
+        href="/admin/products"
+        className="text-xs font-bold text-neutral-600 hover:text-black transition-colors"
+        >
         &larr; Back to Products
         </Link>
     </div>
@@ -405,34 +400,11 @@ return (
             >
                 <option value="">Select Category</option>
                 {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
+                <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                </option>
                 ))}
             </select>
-            </div>
-
-            <div>
-            <label className="block text-xs font-bold text-neutral-600 mb-1">
-                Faculty Drops <span className="text-neutral-400 font-semibold">(optional)</span>
-            </label>
-            <div className="flex flex-wrap gap-2">
-                {facultyDrops.map((d) => {
-                const selected = formData.facultyDropIds.includes(d.id);
-                return (
-                    <button
-                    type="button"
-                    key={d.id}
-                    onClick={() => toggleFacultyDrop(d.id)}
-                    className={`px-3 py-1.5 text-xs font-bold rounded border transition-colors ${
-                        selected
-                        ? 'bg-black text-white border-black'
-                        : 'bg-white text-neutral-700 border-neutral-200 hover:border-black'
-                    }`}
-                    >
-                    {d.name}
-                    </button>
-                );
-                })}
-            </div>
             </div>
 
             <div>
@@ -443,7 +415,9 @@ return (
                 className="w-full border border-neutral-200 p-2 text-xs rounded bg-white font-bold outline-none cursor-pointer"
             >
                 {STATUS_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
+                <option key={o.value} value={o.value}>
+                    {o.label}
+                </option>
                 ))}
             </select>
             {isOutOfStock && (
@@ -473,10 +447,15 @@ return (
             {images.length > 0 ? (
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mb-4">
                 {images.map((img, i) => (
-                <div key={img.id} className="relative aspect-square bg-neutral-100 rounded overflow-hidden border border-neutral-200">
+                <div
+                    key={img.id}
+                    className="relative aspect-square bg-neutral-100 rounded overflow-hidden border border-neutral-200"
+                >
                     <Image src={img.imageUrl} alt="" fill className="object-cover" />
                     {i === 0 && (
-                    <span className="absolute left-1 top-1 bg-black text-white text-[9px] font-bold px-1 rounded">MAIN</span>
+                    <span className="absolute left-1 top-1 bg-black text-white text-[9px] font-bold px-1 rounded">
+                        MAIN
+                    </span>
                     )}
                     <button
                     type="button"
@@ -526,12 +505,16 @@ return (
                 <tbody className="divide-y divide-neutral-100 text-xs font-semibold">
                 {variants.length === 0 ? (
                     <tr>
-                    <td colSpan={6} className="p-6 text-center text-neutral-400">No variants found.</td>
+                    <td colSpan={6} className="p-6 text-center text-neutral-400">
+                        No variants found.
+                    </td>
                     </tr>
                 ) : (
                     variants.map((v) => {
-                    const edit = variantEdits[v.id] ?? { price: String(v.price), stock: String(v.stockQuantity) };
-                    const changed = edit.price !== String(v.price) || edit.stock !== String(v.stockQuantity);
+                    const edit =
+                        variantEdits[v.id] ?? { price: String(v.price), stock: String(v.stockQuantity) };
+                    const changed =
+                        edit.price !== String(v.price) || edit.stock !== String(v.stockQuantity);
                     return (
                         <tr key={v.id} className="hover:bg-neutral-50">
                         <td className="p-3 whitespace-nowrap">{v.colorName}</td>
@@ -542,7 +525,10 @@ return (
                             min={1}
                             value={edit.price}
                             onChange={(e) =>
-                                setVariantEdits({ ...variantEdits, [v.id]: { ...edit, price: e.target.value } })
+                                setVariantEdits({
+                                ...variantEdits,
+                                [v.id]: { ...edit, price: e.target.value },
+                                })
                             }
                             className="w-24 border border-neutral-200 p-1.5 rounded outline-none focus:border-black font-bold"
                             />
@@ -553,7 +539,10 @@ return (
                             min={0}
                             value={edit.stock}
                             onChange={(e) =>
-                                setVariantEdits({ ...variantEdits, [v.id]: { ...edit, stock: e.target.value } })
+                                setVariantEdits({
+                                ...variantEdits,
+                                [v.id]: { ...edit, stock: e.target.value },
+                                })
                             }
                             className="w-20 border border-neutral-200 p-1.5 rounded outline-none focus:border-black font-bold"
                             />
@@ -598,7 +587,9 @@ return (
                 >
                 <option value="">Select Color</option>
                 {colors.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
+                    <option key={c.id} value={c.id}>
+                    {c.name}
+                    </option>
                 ))}
                 </select>
             </div>
@@ -613,7 +604,9 @@ return (
                 >
                 <option value="">Select Size</option>
                 {sizes.map((s) => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
+                    <option key={s.id} value={s.id}>
+                    {s.name}
+                    </option>
                 ))}
                 </select>
             </div>

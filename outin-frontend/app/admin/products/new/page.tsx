@@ -39,11 +39,9 @@ const [name, setName] = useState('');
 const [description, setDescription] = useState('');
 const [status, setStatus] = useState<number>(2);
 const [categoryId, setCategoryId] = useState('');
-const [facultyDropId, setFacultyDropId] = useState('');
 const [basePrice, setBasePrice] = useState<number | ''>('');
 
 const [categories, setCategories] = useState<any[]>([]);
-const [facultyDrops, setFacultyDrops] = useState<any[]>([]);
 const [availableColors, setAvailableColors] = useState<any[]>([]);
 const [availableSizes, setAvailableSizes] = useState<any[]>([]);
 const [selectedColors, setSelectedColors] = useState<any[]>([]);
@@ -92,7 +90,6 @@ useEffect(() => {
     };
 
     safeFetch('categories', setCategories);
-    safeFetch('faculty-drops', setFacultyDrops);
     safeFetch('colors', setAvailableColors);
     safeFetch('sizes', setAvailableSizes);
 }, []);
@@ -210,7 +207,7 @@ const handleSubmit = async (e: React.FormEvent) => {
     status: Number(status),
     categoryId,
     imageUrls,
-    facultyDropIds: facultyDropId ? [facultyDropId] : [],
+    facultyDropIds: [], // legacy field, still required by the API until the backend cleanup
     variants: variantRows.map((r) => ({
         sku: r.sku.trim(),
         colorId: r.colorId,
@@ -249,7 +246,10 @@ return (
     <AdminLayout>
     <div className="p-8 overflow-y-auto">
         <div className="mb-6">
-        <Link href="/admin/products" className="text-xs font-bold text-neutral-400 hover:text-black uppercase tracking-wider mb-2 inline-block transition-colors">
+        <Link
+            href="/admin/products"
+            className="text-xs font-bold text-neutral-400 hover:text-black uppercase tracking-wider mb-2 inline-block transition-colors"
+        >
             ← Back to Products
         </Link>
         <h2 className="text-2xl font-black uppercase tracking-tight">Add Product</h2>
@@ -299,24 +299,6 @@ return (
 
             <div>
             <label className="text-xs font-bold uppercase tracking-wider block mb-1">
-                Faculty Drop <span className="text-neutral-400 normal-case font-semibold">(optional)</span>
-            </label>
-            <select
-                value={facultyDropId}
-                onChange={(e) => setFacultyDropId(e.target.value)}
-                className="w-full border border-neutral-200 p-2.5 text-xs font-bold rounded bg-white outline-none focus:border-black cursor-pointer"
-            >
-                <option value="">None (general product)</option>
-                {facultyDrops.map((drop) => (
-                <option key={drop.id || drop.facultyDropId} value={drop.id || drop.facultyDropId}>
-                    {drop.name}
-                </option>
-                ))}
-            </select>
-            </div>
-
-            <div>
-            <label className="text-xs font-bold uppercase tracking-wider block mb-1">
                 Status <span className="text-[#FF4500]">*</span>
             </label>
             <select
@@ -325,7 +307,9 @@ return (
                 className="w-full border border-neutral-200 p-2.5 text-xs font-bold rounded bg-white outline-none focus:border-black cursor-pointer"
             >
                 {STATUS_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
+                <option key={o.value} value={o.value}>
+                    {o.label}
+                </option>
                 ))}
             </select>
             </div>
@@ -368,9 +352,15 @@ return (
                 {imageUrls.map((url, i) => (
                     <div key={`${url}-${i}`} className="relative">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={url} alt="" className="w-full aspect-square object-cover rounded border border-neutral-200" />
+                    <img
+                        src={url}
+                        alt=""
+                        className="w-full aspect-square object-cover rounded border border-neutral-200"
+                    />
                     {i === 0 && (
-                        <span className="absolute left-1 top-1 bg-black text-white text-[9px] font-bold px-1 rounded">MAIN</span>
+                        <span className="absolute left-1 top-1 bg-black text-white text-[9px] font-bold px-1 rounded">
+                        MAIN
+                        </span>
                     )}
                     <button
                         type="button"
@@ -395,7 +385,12 @@ return (
                 className="hidden"
                 />
                 <svg className="w-8 h-8 text-neutral-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                />
                 </svg>
                 <span className="text-xs font-bold">{isUploading ? 'Uploading...' : 'Upload images'}</span>
                 <span className="text-[10px] text-neutral-400 mt-0.5">PNG, JPG, WEBP (max 5MB each)</span>
@@ -418,7 +413,9 @@ return (
                         key={cId}
                         onClick={() => toggle(selectedColors, setSelectedColors, c)}
                         className={`px-3 py-1.5 text-xs font-bold rounded border transition-colors ${
-                        isSelected ? 'bg-black text-white border-black' : 'bg-white text-neutral-700 border-neutral-200 hover:border-black'
+                        isSelected
+                            ? 'bg-black text-white border-black'
+                            : 'bg-white text-neutral-700 border-neutral-200 hover:border-black'
                         }`}
                     >
                         {cName}
@@ -447,7 +444,9 @@ return (
                         key={sId}
                         onClick={() => toggle(selectedSizes, setSelectedSizes, s)}
                         className={`px-3 py-1.5 text-xs font-bold rounded border transition-colors ${
-                        isSelected ? 'bg-black text-white border-black' : 'bg-white text-neutral-700 border-neutral-200 hover:border-black'
+                        isSelected
+                            ? 'bg-black text-white border-black'
+                            : 'bg-white text-neutral-700 border-neutral-200 hover:border-black'
                         }`}
                     >
                         {sName}

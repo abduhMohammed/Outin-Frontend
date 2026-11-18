@@ -27,25 +27,19 @@ id: string;
 name: string;
 }
 
-interface FacultyDrop {
-id: string;
-name: string;
-slug: string;
-description?: string;
-imageUrl?: string;
-displayOrder: number;
-isActive: boolean;
-}
+const VALID_TABS = ['categories', 'colors', 'sizes'];
 
 function CatalogContent() {
 const router = useRouter();
 const searchParams = useSearchParams();
-const activeTab = searchParams.get('tab') || 'categories';
+const tabParam = searchParams.get('tab') || 'categories';
+// Old links (e.g. ?tab=faculty-drops) fall back to categories
+const activeTab = VALID_TABS.includes(tabParam) ? tabParam : 'categories';
 
 // Global UI States
 const [loading, setLoading] = useState<boolean>(false);
 const [submitting, setSubmitting] = useState<boolean>(false);
-const [uploading, setUploading] = useState<boolean>(false);
+const [deleting, setDeleting] = useState<boolean>(false);
 const [errorMessage, setErrorMessage] = useState<string | null>(null);
 const [successMessage, setSuccessMessage] = useState<string | null>(null);
 const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -54,11 +48,11 @@ const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 const [categories, setCategories] = useState<Category[]>([]);
 const [colors, setColors] = useState<ColorItem[]>([]);
 const [sizes, setSizes] = useState<SizeItem[]>([]);
-const [facultyDrops, setFacultyDrops] = useState<FacultyDrop[]>([]);
 
-// Modal State
+// Modal States
 const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 const [editingItem, setEditingItem] = useState<any | null>(null);
+const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
 // Form States
 const [catName, setCatName] = useState('');
@@ -69,12 +63,6 @@ const [colorName, setColorName] = useState('');
 const [colorHex, setColorHex] = useState('#000000');
 
 const [sizeName, setSizeName] = useState('');
-
-const [dropName, setDropName] = useState('');
-const [dropDesc, setDropDesc] = useState('');
-const [dropImage, setDropImage] = useState('');
-const [dropOrder, setDropOrder] = useState(0);
-const [dropActive, setDropActive] = useState(true);
 
 // Success auto-hide timer
 useEffect(() => {
@@ -147,12 +135,6 @@ const loadTabData = useCallback(async () => {
     } else if (activeTab === 'sizes') {
         const data = await adminFetch('/sizes');
         setSizes(Array.isArray(data) ? data : []);
-    } else if (activeTab === 'faculty-drops') {
-        const data = await adminFetch('/faculty-drops?activeOnly=false');
-        const sorted = (Array.isArray(data) ? data : []).sort(
-        (a: FacultyDrop, b: FacultyDrop) => (a.displayOrder || 0) - (b.displayOrder || 0)
-        );
-        setFacultyDrops(sorted);
     }
     } catch (err: any) {
     if (err.message !== 'Unauthorized') {
@@ -187,12 +169,6 @@ const handleOpenAddModal = () => {
 
     setSizeName('');
 
-    setDropName('');
-    setDropDesc('');
-    setDropImage('');
-    setDropOrder(0);
-    setDropActive(true);
-
     setIsModalOpen(true);
 };
 
@@ -207,12 +183,6 @@ const handleOpenEditModal = (item: any) => {
     setColorHex(item.hexCode || '#000000');
     } else if (activeTab === 'sizes') {
     setSizeName(item.name || '');
-    } else if (activeTab === 'faculty-drops') {
-    setDropName(item.name || '');
-    setDropDesc(item.description || '');
-    setDropImage(item.imageUrl || '');
-    setDropOrder(item.displayOrder || 0);
-    setDropActive(!!item.isActive);
     }
     setIsModalOpen(true);
     setOpenMenuId(null);
@@ -221,47 +191,6 @@ const handleOpenEditModal = (item: any) => {
 const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingItem(null);
-};
-
-// Image Upload Handler for Faculty Drops
-const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 5 * 1024 * 1024) {
-    setErrorMessage('Image size must be less than 5MB.');
-    return;
-    }
-
-    const validTypes = ['image/png', 'image/jpeg', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
-    setErrorMessage('Only PNG, JPG, and WEBP image formats are supported.');
-    return;
-    }
-
-    setUploading(true);
-    setErrorMessage(null);
-
-    const formData = new FormData();
-    formData.append('files', file);
-
-    try {
-    const res = await adminFetch('/products/images?folder=faculty-drops', {
-        method: 'POST',
-        body: formData,
-    });
-
-    if (res?.urls && res.urls.length > 0) {
-        setDropImage(res.urls[0]);
-        setSuccessMessage('Image uploaded successfully.');
-    } else {
-        setErrorMessage('Failed to retrieve uploaded image URL.');
-    }
-    } catch (err: any) {
-    setErrorMessage(err.message || 'Image upload failed.');
-    } finally {
-    setUploading(false);
-    }
 };
 
 // Form Submit Handler
@@ -332,28 +261,6 @@ const handleSubmit = async (e: React.FormEvent) => {
         });
         setSuccessMessage('Size created successfully.');
         }
-    } else if (activeTab === 'faculty-drops') {
-        const payload = {
-        ...(editingItem ? { id: editingItem.id } : {}),
-        name: dropName,
-        description: dropDesc,
-        imageUrl: dropImage,
-        displayOrder: Number(dropOrder) || 0,
-        isActive: dropActive,
-        };
-        if (editingItem) {
-        await adminFetch(`/faculty-drops/${editingItem.id}`, {
-            method: 'PUT',
-            body: JSON.stringify(payload),
-        });
-        setSuccessMessage('Faculty drop updated successfully.');
-        } else {
-        await adminFetch('/faculty-drops', {
-            method: 'POST',
-            body: JSON.stringify(payload),
-        });
-        setSuccessMessage('Faculty drop created successfully.');
-        }
     }
 
     handleCloseModal();
@@ -367,30 +274,42 @@ const handleSubmit = async (e: React.FormEvent) => {
     }
 };
 
-// Delete Handler
-const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
+// Open Delete Confirmation Modal
+const openDeleteModal = (id: string, name: string) => {
+    setOpenMenuId(null);
+    setDeleteTarget({ id, name });
+};
+
+// Confirm Delete Handler
+const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
 
     setErrorMessage(null);
     setSuccessMessage(null);
-    setOpenMenuId(null);
+    setDeleting(true);
 
     try {
     let endpoint = '';
-    if (activeTab === 'categories') endpoint = `/categories/${id}`;
-    else if (activeTab === 'colors') endpoint = `/colors/${id}`;
-    else if (activeTab === 'sizes') endpoint = `/sizes/${id}`;
-    else if (activeTab === 'faculty-drops') endpoint = `/faculty-drops/${id}`;
+    if (activeTab === 'categories') endpoint = `/categories/${deleteTarget.id}`;
+    else if (activeTab === 'colors') endpoint = `/colors/${deleteTarget.id}`;
+    else if (activeTab === 'sizes') endpoint = `/sizes/${deleteTarget.id}`;
 
     await adminFetch(endpoint, { method: 'DELETE' });
-    setSuccessMessage('Item deleted successfully.');
+    setSuccessMessage(`"${deleteTarget.name}" deleted successfully.`);
+    setDeleteTarget(null);
     await loadTabData();
     } catch (err: any) {
     if (err.message !== 'Unauthorized') {
         setErrorMessage(err.message || 'Could not delete item.');
     }
+    setDeleteTarget(null);
+    } finally {
+    setDeleting(false);
     }
 };
+
+const addLabel =
+    activeTab === 'categories' ? 'Category' : activeTab === 'colors' ? 'Color' : 'Size';
 
 return (
     <AdminLayout>
@@ -399,14 +318,14 @@ return (
         <div>
         <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight">Catalog Settings</h2>
         <p className="text-xs font-semibold text-neutral-400 mt-0.5">
-            Manage your store categories, colors, sizes, and faculty drops
+            Manage your store categories, colors, and sizes
         </p>
         </div>
         <button
         onClick={handleOpenAddModal}
         className="bg-[#FF4500] hover:bg-[#e03d00] text-white text-xs font-black uppercase tracking-wider px-5 py-2.5 rounded shadow-xs transition-colors w-full sm:w-auto cursor-pointer"
         >
-        + Add {activeTab === 'categories' ? 'Category' : activeTab === 'colors' ? 'Color' : activeTab === 'sizes' ? 'Size' : 'Faculty Drop'}
+        + Add {addLabel}
         </button>
     </div>
 
@@ -416,7 +335,6 @@ return (
         { key: 'categories', label: 'Categories' },
         { key: 'colors', label: 'Colors' },
         { key: 'sizes', label: 'Sizes' },
-        { key: 'faculty-drops', label: 'Faculty Drops' },
         ].map((tab) => (
         <button
             key={tab.key}
@@ -506,7 +424,7 @@ return (
                                 Edit
                             </button>
                             <button
-                                onClick={() => handleDelete(cat.id, cat.name)}
+                                onClick={() => openDeleteModal(cat.id, cat.name)}
                                 className="w-full px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50 text-left cursor-pointer"
                             >
                                 Delete
@@ -566,7 +484,7 @@ return (
                                 Edit
                             </button>
                             <button
-                                onClick={() => handleDelete(c.id, c.name)}
+                                onClick={() => openDeleteModal(c.id, c.name)}
                                 className="w-full px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50 text-left cursor-pointer"
                             >
                                 Delete
@@ -617,89 +535,7 @@ return (
                                 Edit
                             </button>
                             <button
-                                onClick={() => handleDelete(s.id, s.name)}
-                                className="w-full px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50 text-left cursor-pointer"
-                            >
-                                Delete
-                            </button>
-                            </div>
-                        )}
-                        </td>
-                    </tr>
-                    ))
-                )}
-                </tbody>
-            </table>
-            )}
-
-            {/* FACULTY DROPS TAB */}
-            {activeTab === 'faculty-drops' && (
-            <table className="w-full text-left border-collapse min-w-[650px]">
-                <thead>
-                <tr className="border-b border-neutral-200 text-[11px] font-black uppercase tracking-wider text-neutral-400 bg-neutral-50">
-                    <th className="p-4">Image</th>
-                    <th className="p-4">Name</th>
-                    <th className="p-4">Display Order</th>
-                    <th className="p-4">Status</th>
-                    <th className="p-4 text-right">Actions</th>
-                </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-100 text-xs font-semibold">
-                {facultyDrops.length === 0 ? (
-                    <tr>
-                    <td colSpan={5} className="p-8 text-center text-neutral-400 font-bold uppercase tracking-wider">
-                        No faculty drops found
-                    </td>
-                    </tr>
-                ) : (
-                    facultyDrops.map((drop) => (
-                    <tr key={drop.id} className="hover:bg-neutral-50 transition-colors">
-                        <td className="p-4">
-                        {drop.imageUrl ? (
-                            <img
-                            src={drop.imageUrl}
-                            alt={drop.name}
-                            className="w-10 h-10 object-cover rounded border border-neutral-200"
-                            />
-                        ) : (
-                            <div className="w-10 h-10 bg-neutral-100 border border-neutral-200 rounded flex items-center justify-center text-[10px] text-neutral-400 font-bold">
-                            N/A
-                            </div>
-                        )}
-                        </td>
-                        <td className="p-4">
-                        <div className="font-extrabold text-black">{drop.name}</div>
-                        <div className="text-[10px] text-neutral-400 font-mono">/{drop.slug}</div>
-                        </td>
-                        <td className="p-4 font-mono font-bold text-black">{drop.displayOrder}</td>
-                        <td className="p-4">
-                        <span
-                            className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 border rounded-sm ${
-                            drop.isActive
-                                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                                : 'bg-neutral-100 text-neutral-600 border-neutral-200'
-                            }`}
-                        >
-                            {drop.isActive ? 'Active' : 'Inactive'}
-                        </span>
-                        </td>
-                        <td className="p-4 text-right relative">
-                        <button
-                            onClick={() => setOpenMenuId(openMenuId === drop.id ? null : drop.id)}
-                            className="p-1 font-black text-neutral-400 hover:text-black cursor-pointer text-base"
-                        >
-                            •••
-                        </button>
-                        {openMenuId === drop.id && (
-                            <div className="absolute right-4 top-10 w-28 bg-white border border-neutral-200 rounded shadow-md z-10 py-1 text-left">
-                            <button
-                                onClick={() => handleOpenEditModal(drop)}
-                                className="w-full px-3 py-1.5 text-xs font-bold text-neutral-700 hover:bg-neutral-100 text-left cursor-pointer"
-                            >
-                                Edit
-                            </button>
-                            <button
-                                onClick={() => handleDelete(drop.id, drop.name)}
+                                onClick={() => openDeleteModal(s.id, s.name)}
                                 className="w-full px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50 text-left cursor-pointer"
                             >
                                 Delete
@@ -723,14 +559,7 @@ return (
         <div className="bg-white max-w-md w-full p-6 sm:p-8 rounded shadow-xl border border-neutral-200 text-black max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center border-b border-neutral-200 pb-4 mb-5">
             <h3 className="text-base font-black uppercase tracking-tight">
-                {editingItem ? 'Edit' : 'Add'}{' '}
-                {activeTab === 'categories'
-                ? 'Category'
-                : activeTab === 'colors'
-                ? 'Color'
-                : activeTab === 'sizes'
-                ? 'Size'
-                : 'Faculty Drop'}
+                {editingItem ? 'Edit' : 'Add'} {addLabel}
             </h3>
             <button
                 onClick={handleCloseModal}
@@ -831,12 +660,11 @@ return (
 
             {/* SIZE FORM */}
             {activeTab === 'sizes' && (
-                <>
                 <div>
-                    <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-600 mb-1">
+                <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-600 mb-1">
                     Size Name *
-                    </label>
-                    <input
+                </label>
+                <input
                     type="text"
                     maxLength={20}
                     required
@@ -844,99 +672,15 @@ return (
                     onChange={(e) => setSizeName(e.target.value)}
                     className="w-full border border-neutral-200 p-2.5 rounded bg-[#FAFAFA] text-black outline-none focus:border-black"
                     placeholder="e.g. S, M, L, XL"
-                    />
+                />
                 </div>
-                </>
-            )}
-
-            {/* FACULTY DROP FORM */}
-            {activeTab === 'faculty-drops' && (
-                <>
-                <div>
-                    <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-600 mb-1">
-                    Name *
-                    </label>
-                    <input
-                    type="text"
-                    maxLength={150}
-                    required
-                    value={dropName}
-                    onChange={(e) => setDropName(e.target.value)}
-                    className="w-full border border-neutral-200 p-2.5 rounded bg-[#FAFAFA] text-black outline-none focus:border-black"
-                    placeholder="e.g. Engineering 2026"
-                    />
-                </div>
-                <div>
-                    <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-600 mb-1">
-                    Description
-                    </label>
-                    <textarea
-                    maxLength={1000}
-                    rows={3}
-                    value={dropDesc}
-                    onChange={(e) => setDropDesc(e.target.value)}
-                    className="w-full border border-neutral-200 p-2.5 rounded bg-[#FAFAFA] text-black outline-none focus:border-black resize-none"
-                    placeholder="Faculty drop description..."
-                    />
-                </div>
-                <div>
-                    <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-600 mb-1">
-                    Image
-                    </label>
-                    {dropImage ? (
-                    <div className="flex items-center gap-4 p-2 border border-neutral-200 rounded bg-[#FAFAFA]">
-                        <img src={dropImage} alt="Preview" className="w-12 h-12 object-cover rounded border" />
-                        <button
-                        type="button"
-                        onClick={() => setDropImage('')}
-                        className="bg-black text-white text-[10px] font-black uppercase px-3 py-1.5 rounded hover:bg-neutral-800 transition-colors cursor-pointer"
-                        >
-                        Remove / Replace
-                        </button>
-                    </div>
-                    ) : (
-                    <input
-                        type="file"
-                        accept="image/png, image/jpeg, image/webp"
-                        disabled={uploading}
-                        onChange={handleImageUpload}
-                        className="w-full border border-neutral-200 p-2 rounded bg-[#FAFAFA] text-xs file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-black file:text-white cursor-pointer disabled:opacity-50"
-                    />
-                    )}
-                    {uploading && <p className="text-[10px] font-bold text-neutral-400 mt-1 animate-pulse">Uploading image...</p>}
-                </div>
-                <div>
-                    <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-600 mb-1">
-                    Display Order
-                    </label>
-                    <input
-                    type="number"
-                    min={0}
-                    value={dropOrder}
-                    onChange={(e) => setDropOrder(parseInt(e.target.value) || 0)}
-                    className="w-full border border-neutral-200 p-2.5 rounded bg-[#FAFAFA] text-black outline-none focus:border-black"
-                    />
-                </div>
-                <div className="flex items-center gap-2 pt-1">
-                    <input
-                    type="checkbox"
-                    id="dropActive"
-                    checked={dropActive}
-                    onChange={(e) => setDropActive(e.target.checked)}
-                    className="w-4 h-4 accent-[#FF4500] cursor-pointer"
-                    />
-                    <label htmlFor="dropActive" className="text-xs font-bold text-neutral-800 cursor-pointer">
-                    Active
-                    </label>
-                </div>
-                </>
             )}
 
             {/* Submit Buttons */}
             <div className="flex flex-col sm:flex-row gap-2 pt-4">
                 <button
                 type="submit"
-                disabled={submitting || uploading}
+                disabled={submitting}
                 className="bg-[#FF4500] hover:bg-[#e03d00] text-white text-xs font-black uppercase tracking-wider py-3 px-5 rounded transition-colors flex-1 cursor-pointer disabled:opacity-50"
                 >
                 {submitting ? 'Saving...' : editingItem ? 'Update' : 'Save'}
@@ -951,6 +695,55 @@ return (
                 </button>
             </div>
             </form>
+        </div>
+        </div>
+    )}
+
+    {/* Custom Delete Confirmation Modal */}
+    {deleteTarget && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+        <div className="bg-white max-w-sm w-full p-6 rounded shadow-xl border border-neutral-200 text-black">
+            <div className="flex items-start justify-between gap-3 border-b border-neutral-200 pb-4 mb-4">
+            <div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-red-600">
+                Confirm Deletion
+                </span>
+                <h3 className="text-base font-black uppercase tracking-tight mt-0.5">
+                Delete {addLabel}
+                </h3>
+            </div>
+            <button
+                onClick={() => setDeleteTarget(null)}
+                disabled={deleting}
+                className="text-neutral-400 hover:text-black font-black text-base px-1 cursor-pointer disabled:opacity-50"
+            >
+                ✕
+            </button>
+            </div>
+
+            <p className="text-xs font-semibold text-neutral-600 leading-relaxed">
+            Are you sure you want to delete{' '}
+            <span className="font-black text-black">&ldquo;{deleteTarget.name}&rdquo;</span>? This action cannot be undone.
+            </p>
+
+            <div className="flex items-center gap-2 pt-6">
+            <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={deleting}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white text-xs font-black uppercase tracking-wider py-2.5 px-4 rounded transition-colors cursor-pointer disabled:opacity-50"
+            >
+                {deleting ? 'Deleting...' : 'Delete'}
+            </button>
+            <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                disabled={deleting}
+                className="flex-1 bg-neutral-100 hover:bg-neutral-200 text-black text-xs font-black uppercase tracking-wider py-2.5 px-4 rounded transition-colors cursor-pointer disabled:opacity-50"
+            >
+                Cancel
+            </button>
+            </div>
         </div>
         </div>
     )}
