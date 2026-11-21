@@ -12,11 +12,11 @@ slug: string;
 imageUrl: string;
 }
 
-const DESKTOP_COLS: Record<number, string> = {
-1: 'md:grid-cols-1 max-w-sm',
-2: 'md:grid-cols-2 max-w-3xl',
-3: 'md:grid-cols-3 max-w-5xl',
-};
+// object-contain shows the whole picture. Switch to 'object-cover' to fill the card (crops the edges).
+const IMAGE_FIT = 'object-contain p-2';
+
+// Same width as a product card: 4 per row on desktop, swipeable on mobile
+const TILE_WIDTH = 'w-[58%] sm:w-[38%] md:w-[calc((100%-3.75rem)/4)]';
 
 export default function CategoryTiles() {
 const [tiles, setTiles] = useState<Tile[]>([]);
@@ -69,12 +69,12 @@ if (isLoading) {
     <section className="bg-[#FAFAFA] py-14 md:py-16 px-6 md:px-12 border-t border-neutral-200/70">
         <div className="max-w-7xl mx-auto">
         <div className="h-7 w-44 bg-neutral-200 animate-pulse mb-8" />
-        <div className="flex md:grid md:grid-cols-4 gap-4 md:gap-5 overflow-hidden">
+        <div className="flex gap-4 md:gap-5 overflow-hidden">
             {Array.from({ length: 4 }).map((_, i) => (
-            <div
-                key={i}
-                className="w-[68%] sm:w-[45%] md:w-auto shrink-0 aspect-square bg-neutral-200/70 animate-pulse"
-            />
+            <div key={i} className={`${TILE_WIDTH} shrink-0 space-y-3`}>
+                <div className="aspect-[4/5] w-full bg-neutral-200/70 animate-pulse" />
+                <div className="h-4 w-24 bg-neutral-200/70 animate-pulse" />
+            </div>
             ))}
         </div>
         </div>
@@ -83,9 +83,6 @@ if (isLoading) {
 }
 
 if (tiles.length === 0) return null;
-
-const desktopCols = DESKTOP_COLS[tiles.length] ?? 'md:grid-cols-4';
-const tileAspect = 'aspect-square md:aspect-[4/3]';
 
 return (
     <section className="bg-[#FAFAFA] text-black py-14 md:py-16 px-6 md:px-12 border-t border-neutral-200/70">
@@ -123,39 +120,37 @@ return (
         )}
         </div>
 
-        {/* MOBILE HORIZONTAL CAROUSEL / DESKTOP GRID */}
+        {/* MOBILE: swipeable row / DESKTOP: wrapping row of product-card-sized tiles */}
         <div
         ref={sliderRef}
-        className={`-mx-6 px-6 md:mx-0 md:px-0 flex md:grid ${desktopCols} gap-4 md:gap-5 overflow-x-auto md:overflow-visible snap-x snap-mandatory scroll-smooth`}
+        className="-mx-6 px-6 md:mx-0 md:px-0 flex md:flex-wrap gap-4 md:gap-5 overflow-x-auto md:overflow-visible snap-x snap-mandatory scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
         {tiles.map((tile, idx) => (
             <Link
             key={tile.id}
             href={`/shop?category=${encodeURIComponent(tile.slug)}`}
-            className={`group relative block w-[68%] sm:w-[45%] md:w-auto shrink-0 snap-start overflow-hidden bg-neutral-900 ${tileAspect}`}
+            className={`group block shrink-0 snap-start ${TILE_WIDTH}`}
             >
-            <Image
+            {/* IMAGE (whole picture visible) */}
+            <div className="relative aspect-[4/5] w-full bg-white border border-neutral-200 group-hover:border-black/40 overflow-hidden transition-colors">
+                <Image
                 src={tile.imageUrl || '/images/product/Basic.jpg'}
                 alt={tile.name}
                 fill
-                sizes="100vw"
-                className="object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500 ease-out"
-            />
-
-            {/* DARK GRADIENT OVERLAY FOR CLEAN CONTRAST */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
-
-            {/* TOP INDEX TAG */}
-            <span className="absolute top-3 left-3 text-[10px] font-mono font-bold tracking-widest text-white/70">
+                sizes="(max-width: 768px) 58vw, 25vw"
+                className={`${IMAGE_FIT} group-hover:scale-105 transition-transform duration-500 ease-out`}
+                />
+                <span className="absolute top-2.5 left-3 text-[10px] font-mono font-bold tracking-widest text-neutral-400">
                 0{idx + 1}
-            </span>
+                </span>
+            </div>
 
-            {/* BOTTOM CATEGORY LABEL */}
-            <div className="absolute inset-x-0 bottom-0 p-4 flex items-center justify-between text-white">
+            {/* LABEL BELOW */}
+            <div className="mt-3 flex items-center justify-between">
                 <h3 className="text-sm sm:text-base font-black uppercase tracking-tight">
                 {tile.name}
                 </h3>
-                <span className="w-7 h-7 bg-white/10 group-hover:bg-[#FF4500] text-white flex items-center justify-center text-xs font-bold transition-colors">
+                <span className="w-7 h-7 border border-neutral-300 group-hover:bg-[#FF4500] group-hover:border-[#FF4500] group-hover:text-white flex items-center justify-center text-xs font-bold transition-colors">
                 &rarr;
                 </span>
             </div>
