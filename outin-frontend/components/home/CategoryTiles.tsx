@@ -12,11 +12,10 @@ slug: string;
 imageUrl: string;
 }
 
-// Full class names so Tailwind can see them: columns follow the number of categories
 const DESKTOP_COLS: Record<number, string> = {
-1: 'md:grid-cols-1',
-2: 'md:grid-cols-2',
-3: 'md:grid-cols-3',
+1: 'md:grid-cols-1 max-w-sm',
+2: 'md:grid-cols-2 max-w-3xl',
+3: 'md:grid-cols-3 max-w-5xl',
 };
 
 export default function CategoryTiles() {
@@ -67,14 +66,14 @@ const scrollSlider = (direction: 'left' | 'right') => {
 
 if (isLoading) {
     return (
-    <section className="bg-[#FAFAFA] py-14 md:py-20 px-6 md:px-12 border-t border-neutral-200/70">
+    <section className="bg-[#FAFAFA] py-14 md:py-16 px-6 md:px-12 border-t border-neutral-200/70">
         <div className="max-w-7xl mx-auto">
         <div className="h-7 w-44 bg-neutral-200 animate-pulse mb-8" />
-        <div className="flex md:grid md:grid-cols-4 gap-4 md:gap-6 overflow-hidden">
+        <div className="flex md:grid md:grid-cols-4 gap-4 md:gap-5 overflow-hidden">
             {Array.from({ length: 4 }).map((_, i) => (
             <div
                 key={i}
-                className="w-[74%] sm:w-[46%] md:w-auto shrink-0 aspect-[3/4] bg-neutral-200/70 animate-pulse"
+                className="w-[68%] sm:w-[45%] md:w-auto shrink-0 aspect-square bg-neutral-200/70 animate-pulse"
             />
             ))}
         </div>
@@ -86,17 +85,21 @@ if (isLoading) {
 if (tiles.length === 0) return null;
 
 const desktopCols = DESKTOP_COLS[tiles.length] ?? 'md:grid-cols-4';
-// fewer, wider tiles look better a bit shorter
-const tileAspect = tiles.length <= 3 ? 'aspect-[3/4] md:aspect-[4/5]' : 'aspect-[3/4]';
+const tileAspect = 'aspect-square md:aspect-[4/3]';
 
 return (
-    <section className="bg-[#FAFAFA] text-black py-14 md:py-20 px-6 md:px-12 border-t border-neutral-200/70">
+    <section className="bg-[#FAFAFA] text-black py-14 md:py-16 px-6 md:px-12 border-t border-neutral-200/70">
     <div className="max-w-7xl mx-auto">
         {/* SECTION HEADER + MOBILE ARROWS */}
-        <div className="flex items-end justify-between gap-4 mb-8 md:mb-10">
-        <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight">
+        <div className="flex items-end justify-between gap-4 mb-8">
+        <div>
+            <span className="text-[11px] font-mono font-bold uppercase tracking-[0.2em] text-[#FF4500]">
+            03 // COLLECTIONS
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight mt-1">
             SHOP BY CATEGORY
-        </h2>
+            </h2>
+        </div>
 
         {tiles.length > 1 && (
             <div className="flex md:hidden items-center gap-2">
@@ -123,19 +126,19 @@ return (
         {/* MOBILE HORIZONTAL CAROUSEL / DESKTOP GRID */}
         <div
         ref={sliderRef}
-        className={`-mx-6 px-6 md:mx-0 md:px-0 flex md:grid ${desktopCols} gap-4 md:gap-6 overflow-x-auto md:overflow-visible snap-x snap-mandatory scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden`}
+        className={`-mx-6 px-6 md:mx-0 md:px-0 flex md:grid ${desktopCols} gap-4 md:gap-5 overflow-x-auto md:overflow-visible snap-x snap-mandatory scroll-smooth`}
         >
         {tiles.map((tile, idx) => (
             <Link
             key={tile.id}
             href={`/shop?category=${encodeURIComponent(tile.slug)}`}
-            className={`group relative block w-[74%] sm:w-[46%] md:w-auto shrink-0 snap-start overflow-hidden bg-neutral-900 ${tileAspect}`}
+            className={`group relative block w-[68%] sm:w-[45%] md:w-auto shrink-0 snap-start overflow-hidden bg-neutral-900 ${tileAspect}`}
             >
             <Image
                 src={tile.imageUrl || '/images/product/Basic.jpg'}
                 alt={tile.name}
                 fill
-                sizes="(max-width: 768px) 74vw, 33vw"
+                sizes="100vw"
                 className="object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500 ease-out"
             />
 
@@ -148,11 +151,11 @@ return (
             </span>
 
             {/* BOTTOM CATEGORY LABEL */}
-            <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5 flex items-center justify-between text-white">
-                <h3 className="text-base sm:text-lg font-black uppercase tracking-tight">
+            <div className="absolute inset-x-0 bottom-0 p-4 flex items-center justify-between text-white">
+                <h3 className="text-sm sm:text-base font-black uppercase tracking-tight">
                 {tile.name}
                 </h3>
-                <span className="w-8 h-8 bg-white/10 group-hover:bg-[#FF4500] text-white flex items-center justify-center text-sm font-bold transition-colors">
+                <span className="w-7 h-7 bg-white/10 group-hover:bg-[#FF4500] text-white flex items-center justify-center text-xs font-bold transition-colors">
                 &rarr;
                 </span>
             </div>
