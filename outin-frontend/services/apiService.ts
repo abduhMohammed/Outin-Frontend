@@ -35,6 +35,8 @@ return {
 
 // In-flight request cache to prevent duplicate concurrent GET calls
 const requestCache = new Map<string, Promise<any>>();
+const IS_SERVER = typeof window === "undefined";
+const SERVER_REVALIDATE_SECONDS = 300;
 
 async function fetchWithDeduplication<T>(endpoint: string): Promise<T> {
 const url = `${API_BASE_URL}/${endpoint}`;
@@ -45,10 +47,17 @@ if (requestCache.has(url)) {
 
 const promise = (async () => {
     try {
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) return [] as unknown as T;
+    const res = await fetch(
+        url,
+        IS_SERVER ? { next: { revalidate: SERVER_REVALIDATE_SECONDS } } : { cache: "no-store" }
+    );
+    if (!res.ok) {
+        if (IS_SERVER) throw new Error(`GET ${endpoint} failed (${res.status})`);
+        return [] as unknown as T;
+    }
     return await res.json();
     } catch (error) {
+    if (IS_SERVER) throw error; // keeps the last good cached page instead of caching an empty one
     console.error(`Error fetching ${endpoint}:`, error);
     return [] as unknown as T;
     } finally {
@@ -114,8 +123,15 @@ try {
 // Fetch single product details by slug (public customer endpoint)
 export async function getProductBySlug(slug: string): Promise<ProductDetails | null> {
 try {
-    const res = await fetch(`${API_BASE_URL}/products/${slug}`, { cache: "no-store" });
-    if (!res.ok) return null;
+    const res = await fetch(
+    `${API_BASE_URL}/products/${encodeURIComponent(slug)}`,
+    IS_SERVER ? { next: { revalidate: 60 } } : { cache: "no-store" }
+    );
+    if (res.status === 404) return null;
+    if (!res.ok) {
+    if (IS_SERVER) throw new Error(`GET products/${slug} failed (${res.status})`);
+    return null;
+    }
 
     const data: ProductDetails = await res.json();
 
@@ -127,6 +143,7 @@ try {
         : ["/images/product/Basic.jpg"],
     };
 } catch (error) {
+    if (IS_SERVER) throw error;
     console.error("getProductBySlug Error:", error);
     return null;
 }

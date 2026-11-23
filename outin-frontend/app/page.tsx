@@ -1,5 +1,3 @@
-'use client';
-
 import Image from 'next/image';
 import Link from 'next/link';
 import Navbar from '@/components/common/Navbar';
@@ -9,6 +7,8 @@ import Footer from '@/components/common/Footer';
 import PendingOrderBanner from '@/components/home/PendingOrderBanner';
 import BestSellers from '@/components/home/BestSellers';
 import CategoryTiles from '@/components/home/CategoryTiles';
+
+export const revalidate = 300; // rebuild this page at most every 5 minutes
 
 export default function Home() {
   return (

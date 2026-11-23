@@ -1,28 +1,15 @@
-'use client';
-
-import { useState, useEffect } from 'react';
 import { getLatestDropProducts } from '@/services/apiService';
 import type { Product } from '@/types/api';
-import ProductSection, { ProductSectionSkeleton } from '@/components/home/ProductSection';
+import ProductSection from '@/components/home/ProductSection';
 
-export default function LatestDrop() {
-const [products, setProducts] = useState<Product[]>([]);
-const [isLoading, setIsLoading] = useState<boolean>(true);
+export default async function LatestDrop() {
+let products: Product[] = [];
+try {
+    products = await getLatestDropProducts();
+} catch (error) {
+    console.error('LatestDrop: could not load products', error);
+}
 
-useEffect(() => {
-    let cancelled = false;
-    getLatestDropProducts().then((data) => {
-    if (!cancelled) {
-        setProducts(Array.isArray(data) ? data : []);
-        setIsLoading(false);
-    }
-    });
-    return () => {
-    cancelled = true;
-    };
-}, []);
-
-if (isLoading) return <ProductSectionSkeleton />;
 if (products.length === 0) return null;
 
 return (

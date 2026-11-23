@@ -1,28 +1,15 @@
-'use client';
-
-import { useState, useEffect } from 'react';
 import { getBestSellers } from '@/services/apiService';
 import type { Product } from '@/types/api';
-import ProductSection, { ProductSectionSkeleton } from '@/components/home/ProductSection';
+import ProductSection from '@/components/home/ProductSection';
 
-export default function BestSellers() {
-const [products, setProducts] = useState<Product[]>([]);
-const [isLoading, setIsLoading] = useState(true);
+export default async function BestSellers() {
+let products: Product[] = [];
+try {
+    products = await getBestSellers(8);
+} catch (error) {
+    console.error('BestSellers: could not load products', error);
+}
 
-useEffect(() => {
-    let cancelled = false;
-    getBestSellers(8).then((data) => {
-    if (!cancelled) {
-        setProducts(Array.isArray(data) ? data : []);
-        setIsLoading(false);
-    }
-    });
-    return () => {
-    cancelled = true;
-    };
-}, []);
-
-if (isLoading) return <ProductSectionSkeleton />;
 if (products.length === 0) return null;
 
 return (
