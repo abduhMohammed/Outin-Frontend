@@ -174,7 +174,7 @@ return (
 
                     {user.roles.includes('Admin') && (
                     <Link
-                        href="/admin/products"
+                        href="/admin/dashboard"
                         onClick={() => setMenuOpen(false)}
                         className="mt-4 block w-full border border-white/20 hover:border-orange-600 hover:text-orange-600 text-center text-xs font-black uppercase tracking-wider py-2 transition-colors"
                     >

@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { getToken, clearToken } from '@/lib/auth';
 
 const navLinks = [
+{ label: 'Dashboard', href: '/admin/dashboard' },
 { label: 'Products', href: '/admin/products' },
 { label: 'Orders', href: '/admin/orders' },
 { label: 'Catalog', href: '/admin/catalog' },
@@ -56,11 +57,10 @@ const handleLogout = () => {
 
 const handleBack = () => {
     if (window.history.length > 1) router.back();
-    else router.push('/admin');
+    else router.push('/admin/dashboard');
 };
 
-const isActive = (href: string) =>
-    href === '/admin' ? pathname === '/admin' : pathname.startsWith(href);
+const isActive = (href: string) => pathname.startsWith(href);
 
 if (!authorized) {
     return (

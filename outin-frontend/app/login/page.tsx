@@ -56,7 +56,7 @@ export default function LoginPage() {
 
       const isAdmin = Array.isArray(data.roles) && data.roles.includes('Admin');
 
-      router.push(isAdmin ? '/admin/products' : '/shop');
+      router.push(isAdmin ? '/admin/dashboard' : '/products');
 
     } catch (error) {
       console.error('Login error:', error);
