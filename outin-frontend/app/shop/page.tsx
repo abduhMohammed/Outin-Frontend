@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { getProducts, getCategories, getColors, getSizes } from '@/services/apiService';
 import ShopClient from './ShopClient';
-
+export const dynamic = 'force-dynamic';
 export const revalidate = 300;
 
 export const metadata: Metadata = {
